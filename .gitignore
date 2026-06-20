@@ -1,0 +1,13 @@
+# Arduino / PlatformIO
+*.hex
+*.bin
+.pio/
+build/
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
