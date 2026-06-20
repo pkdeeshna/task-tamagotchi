@@ -43,10 +43,3 @@ Open `firmware/tamagotchi_pet.ino` in the Arduino IDE with the ESP32 board packa
 - The BLE characteristic has no pairing/authentication — anyone in range who knows the service UUID can send a `TASK_DONE` packet. Harmless for a desk toy, but worth knowing if you build on this.
 - Growth stages and animation frames are intentionally minimal (2 frames per stage) — easy to extend with more frames or stages.
 
-## License
-
-No license — all rights reserved by default. Reach out if you'd like to use this for something.
-
----
-
-*reyaveynwrites // desk shrine systems*
