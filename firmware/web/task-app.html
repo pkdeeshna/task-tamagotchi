@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>TASK_DONE // tamagotchi link</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --void:#050507;
+    --void2:#0c0a14;
+    --cyan:#5be8ff;
+    --pink:#ff7fd6;
+    --violet:#b388ff;
+    --yellow:#ffe066;
+    --mint:#7af0c2;
+    --paper:#f2eee4;
+    --line: rgba(255,255,255,.1);
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0; padding:0;}
+
+  body{
+    background: var(--void);
+    color: var(--paper);
+    font-family: 'Sora', sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ---------- ambient scanline + grain ---------- */
+  .grain{
+    position:fixed; inset:0; pointer-events:none; z-index:1;
+    opacity:.07; mix-blend-mode:screen;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.5) 0 1px, transparent 1px 3px);
+    background-size: 100% 3px;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:relative; z-index:5;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--line);
+    font-family:'Space Mono', monospace;
+    font-size:11px;
+    letter-spacing:.06em;
+    background: rgba(5,5,7,.6);
+    backdrop-filter: blur(8px);
+  }
+  .brand{
+    display:flex; align-items:center; gap:8px;
+    font-weight:700;
+    text-transform:uppercase;
+    color: var(--paper);
+  }
+  .brand .dot{
+    width:8px; height:8px; border-radius:50%;
+    background: conic-gradient(from 0deg, var(--violet), var(--cyan), var(--pink), var(--yellow), var(--violet));
+    box-shadow: 0 0 10px rgba(179,136,255,.8);
+    animation: spin 6s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg);} }
+
+  .status-chip{
+    display:flex; align-items:center; gap:7px;
+    padding: 6px 12px;
+    border:1px solid rgba(255,255,255,.25);
+    border-radius: 999px;
+    background: rgba(255,255,255,.04);
+    text-transform:uppercase;
+    cursor:pointer;
+    color: var(--paper);
+    transition: transform .15s ease, border-color .2s ease;
+  }
+  .status-chip:active{ transform: scale(.96); }
+  .status-chip .led{
+    width:7px; height:7px; border-radius:50%;
+    background:#ff4d7d;
+    box-shadow:0 0 8px #ff4d7d;
+  }
+  .status-chip.connected{ border-color: rgba(122,240,194,.6); }
+  .status-chip.connected .led{
+    background: var(--mint);
+    box-shadow:0 0 8px var(--mint);
+  }
+
+  /* ---------- hero : oil slick image ---------- */
+  .hero{
+    position:relative; z-index:2;
+    padding: 64px 22px 46px;
+    text-align:center;
+    overflow:hidden;
+    isolation:isolate;
+  }
+  .hero-bg{
+    position:absolute; inset:0; z-index:-1;
+    background-image: url('assets/bg-1.jpg');
+    background-size: cover;
+    background-position: center 20%;
+    filter: saturate(1.3) brightness(.62);
+  }
+  .hero-bg::after{ content:""; }
+  .hero-fade{
+    position:absolute; inset:0; z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(5,5,7,.35) 0%, rgba(5,5,7,.55) 55%, var(--void) 96%),
+      radial-gradient(circle at 50% 30%, transparent 0%, rgba(5,5,7,.5) 75%);
+  }
+
+  .eyebrow{
+    font-family:'Space Mono', monospace;
+    font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+    opacity:.65; margin: 0 0 14px;
+    color: var(--cyan);
+    text-shadow: 0 0 12px rgba(91,232,255,.5);
+  }
+
+  h1{
+    font-family:'Archivo Black', sans-serif;
+    font-size: clamp(38px, 10vw, 62px);
+    line-height:.96;
+    margin:0;
+    letter-spacing:-.01em;
+    color: #fff;
+    text-shadow:
+      0 0 18px rgba(255,255,255,.25),
+      2px 0 0 rgba(91,232,255,.6),
+      -2px 0 0 rgba(255,127,214,.6);
+  }
+
+  .sub{
+    font-family:'Space Mono', monospace;
+    font-size:13px;
+    opacity:.7;
+    max-width: 360px;
+    margin: 16px auto 0;
+    line-height:1.6;
+    color: var(--paper);
+  }
+
+  .connect-btn{
+    margin: 30px auto 0;
+    display:inline-flex; align-items:center; gap:10px;
+    padding: 15px 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.3);
+    cursor:pointer;
+    font-family:'Sora', sans-serif;
+    font-weight:800;
+    font-size:14px;
+    letter-spacing:.02em;
+    color: var(--void);
+    background: linear-gradient(120deg, var(--mint), var(--cyan) 35%, var(--violet) 68%, var(--pink));
+    background-size: 200% 100%;
+    box-shadow: 0 0 40px -6px rgba(91,232,255,.45), 0 12px 30px -8px rgba(0,0,0,.6);
+    transition: background-position .5s ease, transform .15s ease;
+  }
+  .connect-btn:hover{ background-position: 100% 0; }
+  .connect-btn:active{ transform: scale(.97); }
+  .connect-btn[disabled]{ opacity:.55; cursor:default; filter:saturate(.4); }
+  .connect-btn .spark{ font-size:16px; }
+
+  /* ---------- panel ---------- */
+  .panel{
+    position:relative; z-index:2;
+    max-width: 480px;
+    margin: 0 auto 0;
+    padding: 0 18px 50px;
+  }
+
+  .panel-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:14px;
+    padding: 0 4px;
+  }
+  .panel-head h2{
+    font-family:'Archivo Black', sans-serif;
+    font-size:14px; text-transform:uppercase; letter-spacing:.06em;
+    margin:0;
+    color: var(--paper);
+  }
+  .panel-head .count{
+    font-family:'Space Mono', monospace;
+    font-size:11px; opacity:.55;
+    color: var(--cyan);
+  }
+
+  .task-list{
+    list-style:none; margin:0; padding:0;
+    display:flex; flex-direction:column; gap:10px;
+  }
+
+  .task{
+    position:relative;
+    display:flex; align-items:center; gap:14px;
+    padding: 16px 16px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 16px;
+    backdrop-filter: blur(6px);
+    overflow:hidden;
+    transition: border-color .25s ease, background .25s ease;
+  }
+  .task.done{
+    border-color: rgba(122,240,194,.5);
+    background: rgba(122,240,194,.05);
+  }
+
+  .task .ripple{
+    position:absolute; inset:0;
+    background: conic-gradient(from 0deg, var(--violet), var(--cyan), var(--mint), var(--pink), var(--violet));
+    opacity:0;
+    transform: scale(0);
+    border-radius:16px;
+    pointer-events:none;
+    mix-blend-mode: screen;
+  }
+  .task.firing .ripple{ animation: rippleGo .6s ease-out; }
+  @keyframes rippleGo{
+    0%{ opacity:.6; transform: scale(0);}
+    70%{ opacity:.3; transform: scale(1.6);}
+    100%{ opacity:0; transform: scale(2.2);}
+  }
+
+  .checkbox{
+    flex: 0 0 auto;
+    width: 30px; height:30px;
+    border-radius: 9px;
+    border: 1.5px solid rgba(255,255,255,.35);
+    background: rgba(255,255,255,.03);
+    background-image: radial-gradient(circle, rgba(255,255,255,.25) 1px, transparent 1.3px);
+    background-size: 6px 6px;
+    position:relative;
+    cursor:pointer;
+    flex-shrink:0;
+    z-index:2;
+    transition: border-color .2s ease, transform .15s ease;
+  }
+  .checkbox:active{ transform: scale(.9); }
+  .checkbox svg{
+    position:absolute; inset:0; margin:auto;
+    width:16px; height:16px;
+    opacity:0; transform: scale(.5);
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  .task.done .checkbox{
+    border-color: transparent;
+    background: conic-gradient(from 120deg, var(--violet), var(--cyan), var(--mint), var(--pink));
+  }
+  .task.done .checkbox svg{ opacity:1; transform: scale(1); }
+
+  .task-label{
+    flex:1;
+    font-size:15px; font-weight:600;
+    z-index:2;
+    color: var(--paper);
+    transition: opacity .2s ease;
+  }
+  .task.done .task-label{
+    opacity:.4;
+    text-decoration: line-through;
+    text-decoration-color: var(--mint);
+    text-decoration-thickness: 2px;
+  }
+
+  .task-tag{
+    font-family:'Space Mono', monospace;
+    font-size:10px;
+    opacity:.5;
+    z-index:2;
+    flex-shrink:0;
+    text-transform:uppercase;
+    color: var(--paper);
+  }
+
+  .add-row{
+    display:flex; gap:10px;
+    margin-top: 14px;
+  }
+  .add-row input{
+    flex:1;
+    font-family:'Sora', sans-serif;
+    font-size:14px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px dashed rgba(255,255,255,.3);
+    background: rgba(255,255,255,.03);
+    outline:none;
+    color: var(--paper);
+  }
+  .add-row input::placeholder{ color: rgba(255,255,255,.4); }
+  .add-row button{
+    font-family:'Space Mono', monospace;
+    font-weight:700;
+    font-size:13px;
+    padding: 0 18px;
+    border-radius:14px;
+    border:1.5px solid rgba(255,255,255,.4);
+    background: rgba(255,255,255,.05);
+    color: var(--paper);
+    cursor:pointer;
+  }
+  .add-row button:active{ transform: scale(.96); }
+
+  /* ---------- terminal w/ glitch-wings texture ---------- */
+  .terminal-wrap{
+    position:relative;
+    margin-top: 22px;
+    border-radius:14px;
+    overflow:hidden;
+    border: 1px solid rgba(255,255,255,.15);
+  }
+  .terminal-bg{
+    position:absolute; inset:0;
+    background-image: url('assets/bg-2.jpg');
+    background-size: cover;
+    background-position: center 15%;
+    opacity: .35;
+    filter: grayscale(.3) brightness(.8);
+  }
+  .terminal-shade{
+    position:absolute; inset:0;
+    background: linear-gradient(180deg, rgba(5,5,7,.55), rgba(5,5,7,.85));
+  }
+  .terminal{
+    position:relative;
+    color: var(--mint);
+    font-family:'Space Mono', monospace;
+    font-size: 11.5px;
+    line-height:1.7;
+    padding: 14px 16px;
+    height: 130px;
+    overflow-y:auto;
+  }
+  .terminal::before{
+    content:"BLE_LOG";
+    position:absolute; top:8px; right:14px;
+    font-size:9px; letter-spacing:.15em;
+    color: rgba(255,255,255,.3);
+  }
+  .terminal .line{ opacity:.95; }
+  .terminal .line.glitch{ animation: glitchText .25s steps(2,end) 2; }
+  @keyframes glitchText{
+    0%{ transform: translateX(0); }
+    40%{ transform: translateX(1px); color: var(--pink); }
+    70%{ transform: translateX(-1px); color: var(--cyan); }
+    100%{ transform: translateX(0); color: var(--mint); }
+  }
+  .terminal .ts{ color: rgba(255,255,255,.4); margin-right:6px; }
+
+  /* ---------- chrome divider strip ---------- */
+  .chrome-strip{
+    position:relative; z-index:2;
+    height: 86px;
+    margin: 6px auto 18px;
+    max-width: 480px;
+    border-radius: 16px;
+    overflow:hidden;
+    background-image: url('assets/bg-3.jpg');
+    background-size: cover;
+    background-position: center 30%;
+    border: 1px solid rgba(255,255,255,.15);
+  }
+  .chrome-strip-shade{
+    position:absolute; inset:0;
+    background: linear-gradient(90deg, rgba(5,5,7,.75), rgba(5,5,7,.1) 40%, rgba(5,5,7,.1) 60%, rgba(5,5,7,.75));
+    display:flex; align-items:center; padding: 0 20px;
+  }
+  .chrome-strip-shade span{
+    font-family:'Space Mono', monospace;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color: var(--paper);
+    opacity:.85;
+  }
+
+  /* ---------- star burst accent ---------- */
+  .star-corner{
+    position:fixed;
+    top: 60px; right:-40px;
+    width:140px; height:140px;
+    background-image: url('assets/bg-4.jpg');
+    background-size: cover;
+    border-radius: 50%;
+    opacity:.18;
+    filter: blur(.5px) saturate(1.4);
+    z-index:0;
+    pointer-events:none;
+    mix-blend-mode: screen;
+  }
+
+  footer{
+    position:relative; z-index:2;
+    text-align:center;
+    font-family:'Space Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing:.08em;
+    opacity:.4;
+    padding: 0 0 36px;
+    text-transform:uppercase;
+    color: var(--paper);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .brand .dot, h1{ animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="star-corner"></div>
+
+<div class="topbar">
+  <div class="brand"><span class="dot"></span> tamagotchi_link</div>
+  <div class="status-chip" id="statusChip">
+    <span class="led" id="led"></span>
+    <span id="statusText">disconnected</span>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-fade"></div>
+  <div class="eyebrow">esp32 :: ble bridge</div>
+  <h1>TASK_DONE</h1>
+  <p class="sub">tick a task, the pet hears about it. one ripple, one packet, one happy tamagotchi.</p>
+  <button class="connect-btn" id="connectBtn">
+    <span class="spark">✶</span> Connect to Tamagotchi
+  </button>
+</div>
+
+<div class="chrome-strip">
+  <div class="chrome-strip-shade"><span>// signal bridge active</span></div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h2>Today's Tasks</h2>
+    <span class="count" id="taskCount">0/0 done</span>
+  </div>
+
+  <ul class="task-list" id="taskList"></ul>
+
+  <div class="add-row">
+    <input id="newTaskInput" type="text" placeholder="add a task…" maxlength="60">
+    <button id="addTaskBtn">+ ADD</button>
+  </div>
+
+  <div class="terminal-wrap">
+    <div class="terminal-bg"></div>
+    <div class="terminal-shade"></div>
+    <div class="terminal" id="terminal">
+      <div class="line"><span class="ts">00:00:00</span>system idle — tap connect to pair</div>
+    </div>
+  </div>
+</div>
+
+<footer>reyaveynwrites // desk shrine systems</footer>
+
+<script>
+(function(){
+  const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+  const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+  const DEVICE_NAME = 'Tamagotchi_Pet';
+
+  let characteristic = null;
+  let device = null;
+
+  const statusChip = document.getElementById('statusChip');
+  const statusText = document.getElementById('statusText');
+  const connectBtn = document.getElementById('connectBtn');
+  const taskList = document.getElementById('taskList');
+  const taskCount = document.getElementById('taskCount');
+  const terminal = document.getElementById('terminal');
+  const newTaskInput = document.getElementById('newTaskInput');
+  const addTaskBtn = document.getElementById('addTaskBtn');
+
+  let tasks = [
+    { id: 'task1', text: 'task1', done: false },
+    { id: 'task2', text: 'task2', done: false },
+    { id: 'task3', text: 'task3', done: false },
+  ];
+
+  function ts(){
+    const d = new Date();
+    return d.toTimeString().slice(0,8);
+  }
+
+  function log(msg, glitch){
+    const line = document.createElement('div');
+    line.className = 'line' + (glitch ? ' glitch' : '');
+    line.innerHTML = `<span class="ts">${ts()}</span>${msg}`;
+    terminal.appendChild(line);
+    terminal.scrollTop = terminal.scrollHeight;
+  }
+
+  function renderTasks(){
+    taskList.innerHTML = '';
+    let doneCount = 0;
+    tasks.forEach(t => {
+      if(t.done) doneCount++;
+      const li = document.createElement('li');
+      li.className = 'task' + (t.done ? ' done' : '');
+      li.dataset.id = t.id;
+      li.innerHTML = `
+        <div class="ripple"></div>
+        <div class="checkbox" role="checkbox" aria-checked="${t.done}">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#050507" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="task-label">${escapeHtml(t.text)}</div>
+        <div class="task-tag">${t.done ? 'sent' : 'pending'}</div>
+      `;
+      taskList.appendChild(li);
+    });
+    taskCount.textContent = `${doneCount}/${tasks.length} done`;
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  taskList.addEventListener('click', async (e) => {
+    const checkbox = e.target.closest('.checkbox');
+    if(!checkbox) return;
+    const li = checkbox.closest('.task');
+    const id = li.dataset.id;
+    const task = tasks.find(t => t.id === id);
+    if(!task || task.done) return;
+
+    task.done = true;
+    renderTasks();
+
+    const newLi = taskList.querySelector(`[data-id="${id}"]`);
+    newLi.classList.add('firing');
+    setTimeout(() => newLi.classList.remove('firing'), 650);
+
+    await sendTaskDone(task.text);
+  });
+
+  addTaskBtn.addEventListener('click', addTask);
+  newTaskInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') addTask();
+  });
+
+  function addTask(){
+    const val = newTaskInput.value.trim();
+    if(!val) return;
+    const id = 'task' + (tasks.length + 1);
+    tasks.push({ id, text: val, done: false });
+    newTaskInput.value = '';
+    renderTasks();
+  }
+
+  async function sendTaskDone(label){
+    if(!characteristic){
+      log(`⚠ not connected — tap "connect" to pair first`, true);
+      return;
+    }
+    try{
+      log(`→ sending TASK_DONE  <span style="color:#b388ff">// ${escapeHtml(label)}</span>`);
+      const encoder = new TextEncoder();
+      await characteristic.writeValue(encoder.encode('TASK_DONE'));
+      log(`✓ packet delivered`, true);
+    } catch(err){
+      log(`✗ write failed: ${err.message}`, true);
+    }
+  }
+
+  connectBtn.addEventListener('click', async () => {
+    if(!navigator.bluetooth){
+      log('✗ Web Bluetooth not available — use Chrome on desktop or Android', true);
+      alert('Web Bluetooth isn\'t supported in this browser. Try Chrome on desktop or Android.');
+      return;
+    }
+
+    try{
+      connectBtn.disabled = true;
+      connectBtn.innerHTML = '<span class="spark">✶</span> Scanning…';
+      log('scanning for Tamagotchi_Pet…');
+
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ name: DEVICE_NAME }],
+        optionalServices: [SERVICE_UUID]
+      });
+
+      device.addEventListener('gattserverdisconnected', onDisconnected);
+
+      connectBtn.innerHTML = '<span class="spark">✶</span> Connecting…';
+      log('found device — opening GATT server…');
+      const server = await device.gatt.connect();
+
+      log('fetching service…');
+      const service = await server.getPrimaryService(SERVICE_UUID);
+
+      log('fetching characteristic…');
+      characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+      statusChip.classList.add('connected');
+      statusText.textContent = 'connected';
+      connectBtn.innerHTML = '<span class="spark">✶</span> Connected';
+      log(`✓ paired with ${device.name}`, true);
+
+    } catch(err){
+      log(`✗ ${err.message}`, true);
+      connectBtn.disabled = false;
+      connectBtn.innerHTML = '<span class="spark">✶</span> Connect to Tamagotchi';
+    }
+  });
+
+  function onDisconnected(){
+    characteristic = null;
+    statusChip.classList.remove('connected');
+    statusText.textContent = 'disconnected';
+    connectBtn.disabled = false;
+    connectBtn.innerHTML = '<span class="spark">✶</span> Connect to Tamagotchi';
+    log('⚠ device disconnected', true);
+  }
+
+  statusChip.addEventListener('click', () => {
+    if(device && device.gatt.connected){
+      device.gatt.disconnect();
+    } else {
+      connectBtn.click();
+    }
+  });
+
+  renderTasks();
+})();
+</script>
+
+</body>
+</html>
